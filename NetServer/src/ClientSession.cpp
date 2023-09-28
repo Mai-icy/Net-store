@@ -78,18 +78,26 @@ std::vector<char> ClientSession::deleteEvent(const Request & req){
 
 std::vector<char> ClientSession::downlaodEvent(const Request & req){
     pFileNode target = currentNode -> findChild(req.filename);
+    if(target == nullptr){
+        std::string error = "The file does not exist";
+        return std::vector<char>(error.begin(), error.end());
+    }
+    if(not target -> isFile()){
+        std::string error = "Unable to download folder";
+        return std::vector<char>(error.begin(), error.end());
+    }
 
     std::ifstream inFile(target -> getFullPath(), std::ios::binary);
-    // if (!inFile) {
-    //     std::cerr << "无法打开文件 " << fileName << " 来读取数据" << std::endl;
-    //     return 1;
-    // }
+    if (!inFile) {
+        std::string error = "Unable to open file";
+        return std::vector<char>(error.begin(), error.end());
+    }
 
     inFile.seekg(0, std::ios::end);
     std::streampos fileSize = inFile.tellg();
     inFile.seekg(0, std::ios::beg);
 
-    std::vector<char> binaryData(fileSize);
+    std::vector<char> binaryData(fileSize + 6);
     inFile.read(binaryData.data(), fileSize);
     inFile.close();
 

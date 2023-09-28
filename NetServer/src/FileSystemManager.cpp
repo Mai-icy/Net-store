@@ -52,7 +52,8 @@ bool FileSystemManager::creatNewFolder(pFileNode currentNode, std::string folder
         throw FileException("The folder already exists");
     }
 
-    int status = mkdir(newFile -> getFullPath().c_str(), S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
+    
+    int status = mkdir((currentNode -> getFullPath() + '/' + folderName).c_str(), S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
     if (status != 0) {
         throw FileException("Folder creation failure");
     }
@@ -72,7 +73,7 @@ bool FileSystemManager::creatNewFile(pFileNode currentNode, const std::string &f
         throw FileException("The file already exists");
     }
     
-    std::ofstream outFile(newFile ->getFullPath(), std::ios::binary);
+    std::ofstream outFile((currentNode -> getFullPath() + '/' + fileName).c_str(), std::ios::binary);
     if(!outFile){
         throw FileException("File write error");
     }

@@ -8,7 +8,9 @@
 #include <arpa/inet.h>
 #include <cstring>
 #include <fcntl.h>
+#include <pthread.h>
 #include "ClientSession.h"
+
 
 
 class TCPServer {
