@@ -9,7 +9,8 @@ add_executable(main src/main.cpp sqlite3/sqlite3.c
                     src/dbHandle.cpp 
                     src/FileSystemManager.cpp 
                     src/ClientSession.cpp
-                    src/Server.cpp)
+                    src/Server.cpp
+                    src/ThreadPool.cpp)
 
 include_directories(${CMAKE_SOURCE_DIR}/include)
 target_link_libraries(main dl pthread)

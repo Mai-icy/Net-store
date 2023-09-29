@@ -1,4 +1,6 @@
 #include "Server.h"
+#include "ThreadPool.h"
+#include <functional>
 
 TCPServer::TCPServer(int port) : port(port){
         listenSocket = socket(AF_INET, SOCK_STREAM, 0);
@@ -45,6 +47,9 @@ TCPServer::TCPServer(int port) : port(port){
 void TCPServer::run(){
     std::cout << "Server is running on port " << port << std::endl;
 
+    std::function<void(int)> func = std::bind(&TCPServer::handleClientEvent, this, std::placeholders::_1);
+    
+    ThreadPool pool(4);
     while (true) {
         epoll_event events[10];
         int numEvents = epoll_wait(epollFd, events, 10, -1);
@@ -62,7 +67,7 @@ void TCPServer::run(){
                 handleNewConnection();
             } else {
                 // 有已有连接的事件
-                handleClientEvent(fd);
+                pool.enqueue(func, fd);
             }
         }
     }
