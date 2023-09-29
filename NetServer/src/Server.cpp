@@ -111,7 +111,7 @@ void TCPServer::handleClientEvent(int fd) {
         std::cout << "Connection closed" << std::endl;
     } else {
         // 处理客户端发送的数据
-        buffer[bytesRead] = '\0';
+        buffer[bytesRead] = '\0'; 
         std::string str_buffer(buffer);
         std::vector<char> result = fdClientMap[fd] -> processEvent(str_buffer);
         // 把处理结果返回

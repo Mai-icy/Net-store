@@ -97,7 +97,7 @@ std::vector<char> ClientSession::downlaodEvent(const Request & req){
     std::streampos fileSize = inFile.tellg();
     inFile.seekg(0, std::ios::beg);
 
-    std::vector<char> binaryData(fileSize + 6);
+    std::vector<char> binaryData(fileSize);
     inFile.read(binaryData.data(), fileSize);
     inFile.close();
 

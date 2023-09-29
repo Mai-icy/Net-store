@@ -4,7 +4,7 @@
 #include <vector>
 #include <fstream>
 #include <sstream>
-#include <WinSock2.h>
+#include <winsock2.h>
 #pragma comment(lib,"ws2_32.lib")
 
 const std::string _UPLOAD("UPLOAD");
@@ -28,15 +28,19 @@ public:
 	Client(int port_, const std::string &addr_): port(port_), addr(addr_) {};
 	~Client() {};
 
-    // void run();
+    void process(const std::string& command);
+    void connectServer();
 
 private:
     void parseCommand(const std::string& command);
     std::vector<char> readFile(const std::string& path);
-    char* generateMessage();
-    void correspond(char* message);
+    void generateMessage();
+    void correspond();
+
     Request request;
     std::string localPath;
+    SOCKET sockClient;
+    char message[2000];
 
     int port;
     std::string addr;

@@ -1,42 +1,45 @@
 #include "client.h"
 
+
 void Client::parseCommand(const std::string& command)
 {
-	Request result;
-	std::vector<std::string> words;
-	std::string word("");
-	for (auto c : command)
-	{
-		if (c == ' ')
-		{
-			words.push_back(word);
-			word.clear();
+	std::istringstream iss(command);
+    std::vector<std::string> words;
+    std::string word;
+
+    while (iss >> word) {
+        words.push_back(word);
+    }
+
+	std::vector<std::string> cmd_set({"CD", "DELETE", "DOWNLOAD", "LISTDIR", "MKDIR", "UPLOAD"});
+	bool isCommandVaild = false;
+	for(const std::string & x:cmd_set){
+		if(x == words[0]){
+			isCommandVaild = true;
+			break;
 		}
-		word.append(1, c);
 	}
 
-
-	if(words[0].find(_CD+_DELETE+_DOWNLOAD+_LISTDIR+_MKDIR+_UPLOAD) == std::string::npos || words.size() > 3)
+	if(!isCommandVaild || words.size() > 3)
 	{
-		std::cerr << "INVALID COMMAND";
+		std::cout << "INVALID COMMAND";
 	}
 	else
 	{
-		result.command = words[0];
-		if (words[0] == _LISTDIR) { result.filename = "0"; }
+		request.command = words[0];
+		if (words[0] == _LISTDIR) 
+		    request.filename = "0";
 		else {
-			result.filename = words[1];
-			result.filesize = 0;
-			result.data = std::vector < char>('0');
-			if (words.size() == 2) { localPath = words[2]; }
+			request.filename = words[1];
+			request.filesize = 0;
+			request.data = std::vector<char>('0');
+			if (words.size() == 3) { localPath = words[2]; }
 			if (words[0] == _UPLOAD) {
-				result.data = readFile(localPath);
-				result.filesize = result.data.size();
+				request.data = readFile(localPath);
+				request.filesize = request.data.size();
 			}
 		}
 	}
-
-	request = result;
 }
 
 std::vector<char> Client::readFile(const std::string& path)
@@ -57,36 +60,33 @@ std::vector<char> Client::readFile(const std::string& path)
 	return res;
 }
 
-char* Client::generateMessage()
+void Client::generateMessage()
 {
-	char* message;
 	std::stringstream ss;
 	ss << "Command: " << request.command << "\n"
 		<< "Filename: " << request.filename << "\n"
 		<< "Filesize: " << request.filesize << "\n"
 		<< "Data: " << &request.data[0];
 	int size = ss.str().size();
-	message = new char[size + 1];
 	memcpy(message, ss.str().c_str(), size + 1);
-	return message;
 }
 
-void Client::correspond(char* message)
-{
+void Client::connectServer(){
 	WSADATA wsaData;
-
-	if (WSAStartup(MAKEWORD(2, 2), &wsaData) != 0)
-	{
-		std::cerr << "Failed to load Winsock";
-		return;
-	}
+    if (WSAStartup(MAKEWORD(2, 2), &wsaData) != 0) {
+        std::cerr << "Failed to initialize Winsock." << std::endl;
+        return ;
+    }
 
 	SOCKADDR_IN addrSrv;
 	addrSrv.sin_family = AF_INET;
 	addrSrv.sin_port = htons(port);
 	addrSrv.sin_addr.S_un.S_addr = inet_addr(addr.c_str());
 
-	SOCKET sockClient = socket(AF_INET, SOCK_STREAM, 0);
+	sockClient = socket(AF_INET, SOCK_STREAM, 0);
+
+	// std::cout << sockClient << std::endl;
+
 	if (SOCKET_ERROR == sockClient) {
 		std::cerr << "Socket() error:" << WSAGetLastError();
 		return;
@@ -96,15 +96,24 @@ void Client::correspond(char* message)
 		std::cerr << "Connect failed:" << WSAGetLastError();
 		return;
 	}
+	std::cout << "Connect Success!" << std::endl;
+
+}
+
+void Client::correspond()
+{
+	// std::cout << message << std::endl;
 
 	send(sockClient, message, strlen(message) + 1, 0);
-
+	// std::cout << "Wait for response" << std::endl;
 	char buff[1024];
 	memset(buff, 0, sizeof(buff));
 	if (request.command != _DOWNLOAD)
 	{
-		recv(sockClient, buff, sizeof(buff), 0);
+		int bytesRead = recv(sockClient, buff, sizeof(buff), 0);
+		buff[bytesRead] = '\0';
 		std::cout << buff << std::endl;
+		// std::cout << "Recived!" << std::endl;
 	}
 	else
 	{
@@ -119,14 +128,10 @@ void Client::correspond(char* message)
 		} while (iResult > 0);
 		fout.close();
 	}
-
-	closesocket(sockClient);
-	WSACleanup();
-	delete[] message;
 }
 
-// void Client::run(){
-// 	std::string line;
-//     std::getline(std::cin, line);
-
-// }
+void Client::process(const std::string& command){
+	parseCommand(command);
+	generateMessage();
+	correspond();
+}
